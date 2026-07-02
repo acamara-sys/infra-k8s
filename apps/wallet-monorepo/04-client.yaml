@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skoleom-client
+  namespace: wallet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skoleom-client
+  template:
+    metadata:
+      labels:
+        app: skoleom-client
+    spec:
+      containers:
+        - name: client
+          image: wegonteachualesson/skoleom-client:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skoleom-client
+  namespace: wallet
+spec:
+  type: NodePort
+  selector:
+    app: skoleom-client
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080   # ← ton app sera sur http://<IP_VPS>:30080

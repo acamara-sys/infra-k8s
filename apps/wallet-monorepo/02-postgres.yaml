@@ -1,0 +1,53 @@
+# Postgres — pour le démarrage on utilise emptyDir (données EPHÉMÈRES : perdues si le pod redémarre).
+# Pour de la vraie persistance : installer local-path-provisioner + PVC (bon exercice CKA, à faire ensuite).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: wallet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: skoleom
+            - name: POSTGRES_PASSWORD
+              value: skoleom_dev
+            - name: POSTGRES_DB
+              value: wallet
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "skoleom", "-d", "wallet"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: wallet
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+  # ClusterIP par défaut → accessible uniquement depuis l'intérieur du cluster

@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skoleom-server
+  namespace: wallet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skoleom-server
+  template:
+    metadata:
+      labels:
+        app: skoleom-server
+    spec:
+      # initContainer : applique les migrations Prisma AVANT de démarrer l'API.
+      # Il retente tant que Postgres n'est pas prêt.
+      initContainers:
+        - name: migrate
+          image: wegonteachualesson/skoleom-server:latest
+          command: ["npx", "prisma", "migrate", "deploy", "--schema=/app/prisma/schema.prisma"]
+          envFrom:
+            - secretRef:
+                name: wallet-secrets
+      containers:
+        - name: server
+          image: wegonteachualesson/skoleom-server:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - secretRef:
+                name: wallet-secrets
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skoleom-server
+  namespace: wallet
+spec:
+  selector:
+    app: skoleom-server
+  ports:
+    - port: 4000
+      targetPort: 4000
+  # ClusterIP : le server n'est PAS exposé à l'extérieur, seul le client (nginx) l'appelle
