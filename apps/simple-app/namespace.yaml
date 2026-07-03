@@ -1,0 +1,6 @@
+apiVersion: 1
+kind: namespace
+metadata: 
+ name: simple-app
+
+ # IP : 164.132.96.173 

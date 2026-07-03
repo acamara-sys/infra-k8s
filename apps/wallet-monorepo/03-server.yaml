@@ -55,4 +55,4 @@ spec:
   ports:
     - port: 4000
       targetPort: 4000
-  # ClusterIP : le server n'est PAS exposé à l'extérieur, seul le client (nginx) l'appelle
+  # ClusterIP : le server n'est PAS exposé à l'extérieur, seul leb client (nginx) l'appelle
